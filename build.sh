@@ -16,10 +16,10 @@ fi
 
 echo "=== Building MoleTLS ($MODE) ==="
 
-# Build frontend -> target/dist/ (fixed path for rust-embed)
+# Build frontend -> target/dist/ (configured in Trunk.toml)
 echo "[1/2] Building frontend..."
 cd frontend
-trunk build $TRUNK_FLAGS --dist ../target/dist
+trunk build $TRUNK_FLAGS
 cd ..
 
 # Build backend -> target/$BUILD_DIR/
