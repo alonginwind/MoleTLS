@@ -4,12 +4,14 @@
 
 ## Features
 
-- Reverse proxy with request forwarding
+- Dynamic reverse proxy with configurable routing rules
+- Domain-based virtual hosting (match by Host header)
+- CRUD API for proxy configuration (`/api/services`)
 - Header passthrough with Host override
 - Query string preservation
 - Connection pooling (reuse HTTP client)
 - Embedded WASM frontend (single binary deployment)
-- Admin API (`/api/status`)
+- i18n support (Chinese / English)
 
 ## Quick Start
 
@@ -33,8 +35,17 @@ curl http://localhost:7999/
 curl http://localhost:7999/api/status
 # {"status":"running","backend":"httpbin.org","port":7999}
 
-# Proxy test
-curl http://localhost:7999/get
+# List proxy configs
+curl http://localhost:7999/api/services
+# []
+
+# Add a proxy rule
+curl -X POST http://localhost:7999/api/services \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"test","domain":"test.local","target_url":"http://httpbin.org"}'
+
+# Delete a proxy rule
+curl -X DELETE http://localhost:7999/api/services/test
 ```
 
 ## Tech Stack
@@ -70,9 +81,19 @@ MoleTLS/
 │   └── main.rs         # Backend: proxy + API + asset serving
 ├── frontend/
 │   ├── Cargo.toml      # Frontend dependencies
+│   ├── Trunk.toml      # Trunk build config
 │   ├── index.html      # HTML entry
+│   ├── style.css       # Global styles
 │   └── src/
-│       └── main.rs     # Leptos component
+│       ├── main.rs     # App entry, routing, sidebar
+│       ├── services.rs # Proxy config management page
+│       ├── settings.rs # Settings page
+│       ├── status.rs   # Status page
+│       ├── i18n.rs     # i18n loader
+│       └── lang/
+│           ├── mod.rs
+│           ├── zh.rs   # Chinese translations
+│           └── en.rs   # English translations
 └── target/
     ├── frontend/       # Trunk build output (embedded at compile time)
     ├── release/        # Backend binary
@@ -84,14 +105,18 @@ MoleTLS/
 ```
 Single Binary (mole-tls)
 ├── Embedded Frontend (WASM + JS + HTML)
-├── Admin API (/api/status)
-└── Reverse Proxy (/* → httpbin.org)
+├── Admin API
+│   ├── GET    /api/status       → Server status
+│   ├── GET    /api/services     → List proxy configs
+│   ├── POST   /api/services     → Add proxy config
+│   └── DELETE /api/services/:name → Delete proxy config
+└── Dynamic Reverse Proxy (domain-based virtual hosting)
 
 Request Flow:
-/            → Serve index.html (embedded)
-/*.js, *.wasm → Serve assets (embedded)
-/api/status  → Return JSON
-/*           → Proxy to backend
+localhost:7999/         → Serve index.html (embedded)
+localhost:7999/*.js,wasm → Serve assets (embedded)
+<domain>:7999/*         → Proxy to matched target_url
+* (no match)            → 404
 ```
 
 ## Learning Goals
@@ -104,8 +129,8 @@ This project is built incrementally to learn Rust:
 4. [x] Admin API endpoint
 5. [x] WASM frontend (Leptos)
 6. [x] Single binary deployment (rust-embed)
-7. [ ] Configurable backend
-8. [ ] Multiple routing rules
+7. [x] Configurable backend (dynamic proxy rules)
+8. [x] Multiple routing rules (domain-based virtual hosting)
 9. [ ] TLS/SSL support
 10. [ ] Authentication
 11. [ ] Tunnel (NAT traversal)
