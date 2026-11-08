@@ -18,7 +18,7 @@ echo "=== Building MoleTLS ($MODE) ==="
 
 # Check if frontend source changed
 FRONTEND_CHANGED=false
-NEW_HASH=$(find frontend/src frontend/index.html frontend/Cargo.toml -type f -exec cat {} + | md5sum | awk '{print $1}')
+NEW_HASH=$(find frontend/ -type f -exec cat {} + | md5sum | awk '{print $1}')
 if [ ! -f target/.frontend_hash ]; then
     FRONTEND_CHANGED=true
 else
