@@ -15,7 +15,7 @@ const BACKEND: &str = "httpbin.org";
 
 // Embed frontend files at compile time
 #[derive(Embed)]
-#[folder = "target/dist/"]
+#[folder = "target/frontend/"]
 struct Assets;
 
 // Reuse a single client for connection pooling

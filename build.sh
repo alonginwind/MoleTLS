@@ -30,7 +30,7 @@ fi
 
 # Build frontend only if source changed
 if [ "$FRONTEND_CHANGED" = true ]; then
-    # Build frontend -> target/dist/ (configured in Trunk.toml)
+    # Build frontend -> target/frontend/ (configured in Trunk.toml)
     echo "[1/2] Building frontend..."
     pushd frontend
     trunk build $TRUNK_FLAGS
