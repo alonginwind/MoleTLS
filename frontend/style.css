@@ -134,6 +134,36 @@ body {
     border-color: #1890ff;
 }
 
+/* Login */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 340px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.login-form .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.login-error {
+    color: #ff4d4f;
+    font-size: 13px;
+}
+
 /* Services */
 .proxy-form {
     display: flex;

@@ -7,6 +7,7 @@
 - Dynamic reverse proxy with configurable routing rules
 - Domain-based virtual hosting (match by Host header)
 - CRUD API for proxy configuration (`/api/services`)
+- Admin login required for every management operation (HTTP Basic, `admin` / `admin`)
 - Header passthrough with Host override
 - Query string preservation
 - Connection pooling (reuse HTTP client)
@@ -25,27 +26,33 @@
 # Open http://localhost:7999/
 ```
 
+Default admin credentials are `admin` / `admin`, defined as the `ADMIN_USER` / `ADMIN_PASS`
+constants in `src/main.rs`.
+
 ## Testing
 
 ```bash
 # Frontend page
 curl http://localhost:7999/
 
-# Admin API
-curl http://localhost:7999/api/status
+# Admin API (login required)
+curl -u admin:admin http://localhost:7999/api/status
 # {"status":"running","backend":"httpbin.org","port":7999}
 
+# Without credentials -> 401
+curl http://localhost:7999/api/status
+
 # List proxy configs
-curl http://localhost:7999/api/services
+curl -u admin:admin http://localhost:7999/api/services
 # []
 
 # Add a proxy rule
-curl -X POST http://localhost:7999/api/services \
+curl -u admin:admin -X POST http://localhost:7999/api/services \
   -H 'Content-Type: application/json' \
   -d '{"name":"test","domain":"test.local","target_url":"http://httpbin.org"}'
 
 # Delete a proxy rule
-curl -X DELETE http://localhost:7999/api/services/test
+curl -u admin:admin -X DELETE http://localhost:7999/api/services/test
 ```
 
 ## Tech Stack
@@ -60,6 +67,7 @@ curl -X DELETE http://localhost:7999/api/services/test
 | hyper-util | HTTP client |
 | rust-embed | Embed frontend assets |
 | serde / serde_json | JSON serialization |
+| base64 | Basic auth header |
 | tracing | Logging |
 
 ### Frontend
@@ -69,6 +77,7 @@ curl -X DELETE http://localhost:7999/api/services/test
 | leptos | WASM UI framework |
 | gloo-net | HTTP client for WASM |
 | serde | JSON deserialization |
+| base64 | Basic auth header |
 
 ## Project Structure
 
@@ -86,6 +95,7 @@ MoleTLS/
 │   ├── style.css       # Global styles
 │   └── src/
 │       ├── main.rs     # App entry, routing, sidebar
+│       ├── auth.rs     # Login page + admin session
 │       ├── services.rs # Proxy config management page
 │       ├── settings.rs # Settings page
 │       ├── status.rs   # Status page
@@ -105,7 +115,7 @@ MoleTLS/
 ```
 Single Binary (mole-tls)
 ├── Embedded Frontend (WASM + JS + HTML)
-├── Admin API
+├── Admin API (HTTP Basic, admin/admin)
 │   ├── GET    /api/status       → Server status
 │   ├── GET    /api/services     → List proxy configs
 │   ├── POST   /api/services     → Add proxy config
@@ -115,6 +125,7 @@ Single Binary (mole-tls)
 Request Flow:
 localhost:7999/         → Serve index.html (embedded)
 localhost:7999/*.js,wasm → Serve assets (embedded)
+localhost:7999/api/*    → Admin API (401 without credentials)
 <domain>:7999/*         → Proxy to matched target_url
 * (no match)            → 404
 ```
@@ -132,7 +143,7 @@ This project is built incrementally to learn Rust:
 7. [x] Configurable backend (dynamic proxy rules)
 8. [x] Multiple routing rules (domain-based virtual hosting)
 9. [ ] TLS/SSL support
-10. [ ] Authentication
+10. [x] Authentication (admin login for management API)
 11. [ ] Tunnel (NAT traversal)
 
 ## License

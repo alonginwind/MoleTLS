@@ -18,6 +18,15 @@ pub fn t(key: &str) -> &'static str {
         "domain_placeholder" => "e.g. kk.test.cn",
         "target_placeholder" => "e.g. http://localhost:8080",
         "add_btn" => "Add",
+        "login_title" => "Admin Login",
+        "username" => "Username",
+        "username_placeholder" => "Enter username",
+        "password" => "Password",
+        "password_placeholder" => "Enter password",
+        "login_btn" => "Sign in",
+        "login_failed" => "Invalid username or password",
+        "account" => "Account",
+        "logout" => "Sign out",
         _ => "??",
     }
 }

@@ -1,11 +1,13 @@
 use axum::{
     body::Body,
     extract::{Path, Request, State},
-    http::{header, Response, StatusCode},
-    response::{IntoResponse, Json},
+    http::{header, StatusCode},
+    middleware::{from_fn, Next},
+    response::{IntoResponse, Json, Response},
     routing::{delete, get},
     Router,
 };
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use hyper_util::{client::legacy::Client, rt::TokioExecutor};
 use rust_embed::Embed;
 use serde::{Deserialize, Serialize};
@@ -19,6 +21,17 @@ struct Assets;
 // Reuse a single client for connection pooling
 static HTTP_CLIENT: LazyLock<Client<hyper_util::client::legacy::connect::HttpConnector, Body>> =
     LazyLock::new(|| Client::builder(TokioExecutor::new()).build_http());
+
+// Admin credentials used to protect /api/*
+const ADMIN_USER: &str = "admin";
+const ADMIN_PASS: &str = "admin";
+
+static ADMIN_HEADER: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        "Basic {}",
+        STANDARD.encode(format!("{ADMIN_USER}:{ADMIN_PASS}"))
+    )
+});
 
 #[derive(Clone, Serialize, Deserialize)]
 struct ProxyConfig {
@@ -40,10 +53,14 @@ async fn main() {
         proxies: Arc::new(RwLock::new(Vec::new())),
     };
 
-    let app = Router::new()
+    let api_routes = Router::new()
         .route("/api/status", get(status))
         .route("/api/services", get(list_services).post(add_service))
         .route("/api/services/:name", delete(delete_service))
+        .layer(from_fn(require_auth));
+
+    let app = Router::new()
+        .merge(api_routes)
         .fallback(serve_or_proxy)
         .with_state(state);
 
@@ -51,6 +68,26 @@ async fn main() {
     tracing::info!("Listening on {}", listener.local_addr().unwrap());
     tracing::info!("Open http://localhost:7999/");
     axum::serve(listener, app).await.unwrap();
+}
+
+/// Rejects admin API requests that don't carry the Basic credentials.
+async fn require_auth(req: Request, next: Next) -> Response<Body> {
+    let authorized = req
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v == ADMIN_HEADER.as_str());
+
+    if authorized {
+        return next.run(req).await;
+    }
+
+    tracing::warn!("unauthorized: {} {}", req.method(), req.uri());
+    (
+        StatusCode::UNAUTHORIZED,
+        Json(serde_json::json!({ "error": "unauthorized" })),
+    )
+        .into_response()
 }
 
 async fn serve_or_proxy(State(state): State<AppState>, req: Request) -> Response<Body> {

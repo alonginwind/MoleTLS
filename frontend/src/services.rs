@@ -1,3 +1,4 @@
+use crate::auth::Auth;
 use crate::i18n::I18n;
 use gloo_net::http::Request;
 use leptos::*;
@@ -13,6 +14,7 @@ struct Proxy {
 #[component]
 pub fn ServicesPage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n context");
+    let auth = use_context::<Auth>().expect("auth context");
     let services = create_rw_signal::<Vec<Proxy>>(Vec::new());
     let name = create_rw_signal(String::new());
     let domain = create_rw_signal(String::new());
@@ -21,7 +23,7 @@ pub fn ServicesPage() -> impl IntoView {
     // Fetch services on mount
     create_effect(move |_| {
         spawn_local(async move {
-            if let Ok(resp) = Request::get("/api/services").send().await {
+            if let Ok(resp) = auth.sign(Request::get("/api/services")).send().await {
                 if let Ok(list) = resp.json::<Vec<Proxy>>().await {
                     services.set(list);
                 }
@@ -34,6 +36,7 @@ pub fn ServicesPage() -> impl IntoView {
         let name = name;
         let domain = domain;
         let target_url = target_url;
+        let auth = auth;
         move |_| {
             let proxy = Proxy {
                 name: name.get(),
@@ -44,7 +47,8 @@ pub fn ServicesPage() -> impl IntoView {
                 return;
             }
             spawn_local(async move {
-                if let Ok(resp) = Request::post("/api/services")
+                if let Ok(resp) = auth
+                    .sign(Request::post("/api/services"))
                     .json(&proxy)
                     .unwrap()
                     .send()
@@ -69,7 +73,8 @@ pub fn ServicesPage() -> impl IntoView {
         let services = services;
         let name = proxy_name.clone();
         spawn_local(async move {
-            if let Ok(resp) = Request::delete(&format!("/api/services/{}", name))
+            if let Ok(resp) = auth
+                .sign(Request::delete(&format!("/api/services/{}", name)))
                 .send()
                 .await
             {

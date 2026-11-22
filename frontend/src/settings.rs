@@ -1,9 +1,11 @@
+use crate::auth::Auth;
 use crate::i18n::{I18n, Locale};
 use leptos::*;
 
 #[component]
 pub fn SettingsPage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n context");
+    let auth = use_context::<Auth>().expect("auth context");
 
     view! {
         <div class="card">
@@ -24,6 +26,12 @@ pub fn SettingsPage() -> impl IntoView {
                         }
                     }).collect::<Vec<_>>()}
                 </div>
+            </div>
+            <div class="setting-group">
+                <div class="setting-label">{move || i18n.t("account")}</div>
+                <button class="lang-btn" on:click=move |_| auth.sign_out()>
+                    {move || i18n.t("logout")}
+                </button>
             </div>
         </div>
     }

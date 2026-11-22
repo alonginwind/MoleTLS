@@ -18,6 +18,15 @@ pub fn t(key: &str) -> &'static str {
         "domain_placeholder" => "例如: kk.test.cn",
         "target_placeholder" => "例如: http://localhost:8080",
         "add_btn" => "添加",
+        "login_title" => "管理员登录",
+        "username" => "用户名",
+        "username_placeholder" => "请输入用户名",
+        "password" => "密码",
+        "password_placeholder" => "请输入密码",
+        "login_btn" => "登录",
+        "login_failed" => "用户名或密码错误",
+        "account" => "账户",
+        "logout" => "退出登录",
         _ => "??",
     }
 }

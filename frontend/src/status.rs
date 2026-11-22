@@ -1,3 +1,4 @@
+use crate::auth::Auth;
 use crate::i18n::I18n;
 use gloo_net::http::Request;
 use leptos::*;
@@ -13,11 +14,12 @@ struct Status {
 #[component]
 pub fn StatusPage() -> impl IntoView {
     let i18n = use_context::<I18n>().expect("i18n context");
+    let auth = use_context::<Auth>().expect("auth context");
     let status = create_rw_signal::<Option<Status>>(None);
 
     create_effect(move |_| {
         spawn_local(async move {
-            if let Ok(s) = Request::get("/api/status").send().await {
+            if let Ok(s) = auth.sign(Request::get("/api/status")).send().await {
                 if let Ok(s) = s.json::<Status>().await {
                     status.set(Some(s));
                 }
